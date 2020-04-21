@@ -1,0 +1,8 @@
+appName: ubre-creator
+
+backend:
+  ip: 192.168.0.80
+  service:
+    port: 8000
+  output-processor:
+    port: 8000
