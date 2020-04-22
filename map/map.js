@@ -6,6 +6,9 @@ let virtualStopsInDB = [];
 let requestsInDB = [];
 let colorGenerator = polylineColorGenerator();
 
+/*****************************************************************************/
+/************************ - MAP GENERATOR FUNCTION  - ************************/
+/*****************************************************************************/
 (function create_map() {
 
   load_polyline_utils()
@@ -67,96 +70,134 @@ let colorGenerator = polylineColorGenerator();
   updateDataFromDB(map, overlayMaps, delete_stops_layer, delete_request_layer);
 
   map.on("click", function(e){
+
     var lat = e.latlng.lat
     var lng = e.latlng.lng
+
     if (map.hasLayer(map_layer)) {
+
       L.marker([lat,lng], {icon: localizationIcon("violet")}).bindPopup(lat + ", " + lng).on("contextmenu",function(e){map.removeLayer(this)}).addTo(map)
+    
     } else if (map.hasLayer(create_requests_layer)) {
-      /*********************************************************************************************
-      **********************************************************************************************/
-      //check_user_dni("Lat, Lon : " + lat + ", " + lng).then(dnires => {
-        //if (dnires["resolve"] == true) {
-          postRequest(lng,lat,/*dnires["user"]*/"54155333Q").then(res => {
+
+      check_user_dni("Lat, Lon : " + lat + ", " + lng).then(dnires => {
+        if (dnires["resolve"] == true) {
+          postRequest(lng,lat,dnires["user"]).then(res => {
             console.log("Request POST response -> " + res)
             updateDataFromDB(map, overlayMaps, delete_stops_layer, delete_request_layer)
           });
-        //}
-      //})
-      /**********************************************************************************************
-      *********************************************************************************************/
+        }
+      })
+
     } else if (map.hasLayer(create_stops_layer) && confirm("Lat, Lon : " + lat + ", " + lng)) {
+
       postVirtualStop(lng,lat).then(res => {
         console.log("VirtualStop POST response -> " + res)
         updateDataFromDB(map, overlayMaps, delete_stops_layer, delete_request_layer)
       });
+
     }
   });
 
 })();
+/*****************************************************************************/
 
 
+/*****************************************************************************/
+/************** - CREATE MARKERS FUNCTION (FROM DB DATA)  - ******************/
+/*****************************************************************************/
 async function updateDataFromDB(map, overlayMaps, delete_stops_layer, delete_request_layer) {
 
   getRequests().then(requests => {
-    requestsInDB = []
+
     var requests_markers = [];
+
     requests.forEach(req => {
-      requests.push(req)
+
       requests_markers.push(
+
         L.marker([req["origen"].split(",")[1].trim(),req["origen"].split(",")[0].trim()], {
+
           dbid: req["id"], 
           icon: localizationIcon("green")
+
         }).bindPopup(req["origen"].split(",")[1].trim()+", "+req["origen"].split(",")[0].trim())
+
         .on("click", function(e){
+
           if (map.hasLayer(delete_request_layer)) {
             deleteRequest(this.options.dbid).then(res => {
               console.log("Request DELETE response -> " + res)
               updateDataFromDB(map, overlayMaps, delete_stops_layer, delete_request_layer)
             });
           }
+
         })
-    );
+
+      );
+
     });
+
     overlayMaps["Requests"].clearLayers();
     requests_markers.forEach(m => overlayMaps["Requests"].addLayer(m));
+
   });
 
   getVirtualStops().then(virtualStops => {
-    virtualStopsInDB = []
+
     var virtualstops_markers = [];
+    
     virtualStops.forEach(vs => {
-      virtualStopsInDB.push(vs)
+
       virtualstops_markers.push(L.marker([vs["coordenadas"].split(",")[1].trim(),vs["coordenadas"].split(",")[0].trim()], {
+
         dbid: vs["id"],
         icon: localizationIcon("red")
+
       }).bindPopup(vs["coordenadas"].split(",")[1].trim()+", "+vs["coordenadas"].split(",")[0].trim())
+
         .on("click", function(e){
+
           if (map.hasLayer(delete_stops_layer)) {
             deleteVirtualStop(this.options.dbid).then(res => {
               console.log("VirtualStop DELETE response -> " + res)
               updateDataFromDB(map, overlayMaps, delete_stops_layer, delete_request_layer)
             });
           }
+
         })
+
       );
+
     });
+
     overlayMaps["Virtual Stops"].clearLayers();
     virtualstops_markers.forEach(s => overlayMaps["Virtual Stops"].addLayer(s));
+
   });
 
   getRoutes().then(routes => {
+
     var routes_polylines = [];
     var i = 0
+
     routes.forEach(r => {
+
       routes_polylines.push(L.Polyline.fromEncoded(r["geometry"],{"color":colorGenerator.next().value}));
+
     });
+
     overlayMaps["Routes"].clearLayers();
     routes_polylines.forEach(p => overlayMaps["Routes"].addLayer(p));
+    
   });
   
 }
+/*****************************************************************************/
 
-
+/*****************************************************************************/
+/******************* - BACKEND CONECTION FUNCTIONS  - ************************/
+/*****************************************************************************/
 async function getRequests() {
   var requestsGET = new Request("http://"+BACKEND_IP+"/movility/requests/");
   const resRequests = await fetch(requestsGET);
@@ -234,8 +275,12 @@ async function deleteRequest(id) {
   });
   return resRequestDelete;
 }
+/*****************************************************************************/
 
 
+/*****************************************************************************/
+/************************ - UTILS FUNCTIONS - ********************************/
+/*****************************************************************************/
 async function check_user_dni(coordsInfo) {
   var response = {"resolve":false, "reason":"User does not exist", "user":""}
   var dni = prompt(

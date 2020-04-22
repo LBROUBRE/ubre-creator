@@ -1,16 +1,78 @@
 
-/************************************************/
-/************************************************/
+/********************************************************************/
+/*********** - WRITE A FUNCTION NAME TO PRINT A CHART - *************/
+/********************************************************************/
 //charts_functions = [ditanceToVirtualStopChart, busDelayChart_autolabels, busDelayChart_manuallabels, acceptedRequestAndOcupationRateChart_manualvalues]
-CHART_TO_PRINT = busDelayChart_manuallabels;
-/************************************************/
-/************************************************/
+CHART_TO_PRINT = todofunction_2;
+/********************************************************************/
 
 
 //OUTPUT_PROCESSOR_OPTIONS = ["getAcceptedRequestsRate", "getRejectedRequestsRate", "getVehicleOccupationAverageRate", "getPedestrianSegmentTotal", "getDifferRequiredProvidedTimeValuesTotal"]
 OUTPUT_PROCESSOR_IP = "192.168.0.80:8888"
 
 var ctx = document.getElementById('chart').getContext('2d');
+
+
+/********************************************************************/
+/**************** - CHARTS TO PRINT (AS FUNCTIONS) - ****************/
+/********************************************************************/
+
+//Grafica: distancias entre la posicion solicitada y la posicion de la parada virtual mas cercana
+function acceptedRequestAndOcupationRateWithUserTimesWithDynamicRangeChart_manualvalues() {
+
+    /************************************************************/
+    var acceptedRequestRate = [ 1.0*100 , 0.97*100 , 0.88*100 , 0.845*100 , 0.838*100 ]
+    var ocupacionVehiculo = [ 0.4389238539238539*100 , 0.5360687268042229*100 , 0.5216331218242017*100 , 0.5244464333247293*100 , 0.5273091533274767*100 ]
+    /************************************************************/
+
+    labels = ["100","200","300","400","500"]
+    var virtual_stop_distance_chart_data_2 = {
+        type: 'bar',
+        data: {
+            scaleStartValue: 0,
+            labels: labels,
+            datasets: [{
+                    label: '% peticións aceptadas',
+                    backgroundColor: 'rgb(69, 105, 144)',
+                    borderColor: 'rgb(69, 105, 144)',
+                    data: acceptedRequestRate
+                },
+                {
+                    label: '% ocupación do vehículo',
+                    backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: ocupacionVehiculo
+                }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        min: 0,
+                        fontSize: 40
+                    }
+                }],
+                xAxes: [{
+                    ticks: {
+                        fontSize: 40
+                    },
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Nº solicitudes repartidas en un rango dínamico de entre 30 y 150 minutos (X*30/100)',
+                        fontSize: 40
+                    }
+                }]
+            },
+            legend: {
+                "display": true,
+                "labels": {
+                    "fontSize": 40
+                }
+            }
+        }
+    }
+    new Chart(ctx, virtual_stop_distance_chart_data_2);
+}
 
 //Grafica: distancias entre la posicion solicitada y la posicion de la parada virtual mas cercana
 function ditanceToVirtualStopChart() {
@@ -75,7 +137,6 @@ function ditanceToVirtualStopChart() {
         new Chart(ctx, virtual_stop_distance_chart_data_1);
     })
 }
-
 
 //Doble grafica: Tiempos de espera de los usuarios en los pickups y en los deliveries (retraso del bus con las horas prometidas)
 function busDelayChart_autolabels() {
@@ -166,7 +227,6 @@ function busDelayChart_autolabels() {
     })
 }
 
-
 //Grafica: Tiempos de espera totales de los usuarios. Calculados sumando el retraso del bus en el pickup y en el delivery
 function busDelayChart_manuallabels() {
     outputProcessor("getDifferRequiredProvidedTimeValuesTotal").then(res => {
@@ -227,7 +287,6 @@ function busDelayChart_manuallabels() {
     });
 }
 
-
 //(SIMs) Doble grafica: Porcentaje de peticiones aceptadas Y porcentaje de ocupacion de los vehiculos durante toda la ruta. (Realizada con varias simulaciones, cambiando el numero de vehiculos)
 function acceptedRequestAndOcupationRateChart_manualvalues() {
     var acceptedRequestRate = [ 0.6451612903225806*100 , 0.7419354838709677*100 , 0.8548387096774194*100 , 0.9516129032258065*100 , 0.9838709677419355*100 , 1.0*100 ]
@@ -239,10 +298,10 @@ function acceptedRequestAndOcupationRateChart_manualvalues() {
             scaleStartValue: 0,
             labels: labels,
             datasets: [{
-                label: '% peticións aceptadas',
-                backgroundColor: ['rgb(69, 105, 144)','rgb(69, 105, 144)','rgb(69, 105, 144)','rgb(16, 82, 177)','rgb(69, 105, 144)','rgb(69, 105, 144)'],
-                borderColor: 'rgb(69, 105, 144)',
-                data: acceptedRequestRate
+                    label: '% peticións aceptadas',
+                    backgroundColor: ['rgb(69, 105, 144)','rgb(69, 105, 144)','rgb(69, 105, 144)','rgb(16, 82, 177)','rgb(69, 105, 144)','rgb(69, 105, 144)'],
+                    borderColor: 'rgb(69, 105, 144)',
+                    data: acceptedRequestRate
                 },
                 {
                     label: '% ocupación do vehículo',
@@ -275,15 +334,23 @@ function acceptedRequestAndOcupationRateChart_manualvalues() {
     }
     new Chart(ctx, virtual_stop_distance_chart_data_2);
 };
+/********************************************************************/
 
 
-
+/********************************************************************/
+/*********** - OUTPUT PROCESSOR CONECTION (IN BACKEND) - ************/
+/********************************************************************/
 async function outputProcessor(funct) {
     var response = new Request("http://"+OUTPUT_PROCESSOR_IP+"/"+funct);
     const date = await fetch(response);
     const jsonData = await date.json();
     return jsonData
 }
+/********************************************************************/
 
 
+/********************************************************************/
+/********************* - MAIN INSTRUCTIONS - ************************/
+/********************************************************************/
 CHART_TO_PRINT()
+/********************************************************************/
